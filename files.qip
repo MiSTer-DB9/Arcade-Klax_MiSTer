@@ -1,0 +1,61 @@
+#============================================================================
+# Klax - source file list
+#
+# This file is the single source of truth for the core's sources. Add files
+# here manually; do NOT add them through the Quartus IDE, which writes them
+# into Klax.qsf instead and lets the two lists drift apart.
+#
+# The MiSTer framework (sys/) and the PLL (rtl/pll.qip) are pulled in by
+# sys/sys.tcl and sys/sys.qip, so they are deliberately absent here.
+#============================================================================
+
+# --- ROM download, flat-address mapping and graphics ROM storage ------------
+set_global_assignment -name VERILOG_FILE rtl/klax_flat_rom_addr.v
+set_global_assignment -name VERILOG_FILE rtl/klax_rom_bank.v
+set_global_assignment -name VERILOG_FILE rtl/klax_ddram_tile_rom.v
+
+# --- 68000 bus: silicon-derived decode, DTACK, inputs, EEPROM, IRQ, watchdog
+set_global_assignment -name VERILOG_FILE rtl/klax_addr_decode.v
+set_global_assignment -name VERILOG_FILE rtl/klax_inputs.v
+set_global_assignment -name VERILOG_FILE rtl/klax_cpu_bus.v
+set_global_assignment -name VERILOG_FILE rtl/klax_eeprom.v
+set_global_assignment -name VERILOG_FILE rtl/klax_irq.v
+set_global_assignment -name VERILOG_FILE rtl/klax_watchdog.v
+
+# --- Audio: OKI MSM6295 ADPCM + the PCB's analog output filter --------------
+set_global_assignment -name VERILOG_FILE rtl/klax_oki6295.v
+set_global_assignment -name VERILOG_FILE rtl/klax_audio_filter.v
+
+# --- Video RAMs and the playfield tilemap renderer -------------------------
+set_global_assignment -name VERILOG_FILE rtl/klax_tilemap_ram.v
+set_global_assignment -name VERILOG_FILE rtl/klax_palette.v
+set_global_assignment -name VERILOG_FILE rtl/klax_playfield.v
+
+# --- CPU-side memories ----------------------------------------------------
+set_global_assignment -name VERILOG_FILE rtl/klax_prog_rom.v
+set_global_assignment -name VERILOG_FILE rtl/klax_work_ram.v
+set_global_assignment -name VERILOG_FILE rtl/klax_mob_ram.v
+
+# --- Motion objects (Atari line-buffer renderer) --------------------------
+set_global_assignment -name VERILOG_FILE rtl/klax_motion_objects.v
+set_global_assignment -name VERILOG_FILE rtl/klax_sprow_adapter.v
+
+# --- System wrapper: 68000 + full memory map ------------------------------
+set_global_assignment -name VERILOG_FILE rtl/klax_sys.v
+
+# --- TG68K 68000 CPU core (LGPL-3.0-or-later, Tobias Gubener et al.) ------
+set_global_assignment -name VHDL_FILE rtl/TG68K/TG68K.vhd
+set_global_assignment -name VHDL_FILE rtl/TG68K/TG68K_ALU.vhd
+set_global_assignment -name VHDL_FILE rtl/TG68K/TG68K_Pack.vhd
+set_global_assignment -name VHDL_FILE rtl/TG68K/TG68KdotC_Kernel.vhd
+
+# --- Analog video alignment (OSD scale / H-size / H-V position) -----------
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/analog_hsize.sv
+set_global_assignment -name VERILOG_FILE rtl/klax_video_adjust.v
+
+# --- MiSTer hardware top ---------------------------------------------------
+set_global_assignment -name VERILOG_FILE rtl/klax_top_mister.v
+
+# --- Constraints and the framework glue layer ------------------------------
+set_global_assignment -name SDC_FILE Klax.sdc
+set_global_assignment -name SYSTEMVERILOG_FILE Klax.sv

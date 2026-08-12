@@ -1,0 +1,65 @@
+# --- Quartus build output -------------------------------------------------
+db
+greybox_tmp
+incremental_db
+output_files
+simulation
+hc_output
+scaler
+hps_isw_handoff
+vip
+*_sim
+.qsys_edit
+PLLJ_PLLSPE_INFO.txt
+*.bak
+*.orig
+*.rej
+*.qdf
+*.rpt
+*.smsg
+*.summary
+*.done
+*.jdi
+*.pin
+*.sof
+*.qws
+*.ppf
+*.ddb
+build_id.v
+c5_pin_model_dump.txt
+*.sopcinfo
+*.csv
+*.f
+*.cmp
+*.sip
+*.spd
+*.bsf
+*~
+*.xml
+*_netlist
+*.cdf
+*.stp
+
+# --- Local-only working directories ---------------------------------------
+# Development notes, testbenches, simulation flows and debug MRAs live
+# alongside the core locally but are not part of the release.
+docs
+tb
+sim
+debug
+wave
+
+# --- ROM data: never commit any of this -----------------------------------
+# The MRA files reference ROM parts by name and CRC; no ROM bytes belong here.
+*.zip
+rom
+*.hex
+
+# --- Simulation output ----------------------------------------------------
+*.vcd
+*.vvp
+*.ppm
+
+# --- Editor / OS ----------------------------------------------------------
+**/.DS_Store
+*.code-workspace
