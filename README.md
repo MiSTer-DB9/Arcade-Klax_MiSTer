@@ -300,6 +300,7 @@ GPL-2.0-or-later, but it links components that require v3:
 | Component | License |
 |-----------|---------|
 | `rtl/klax_*.v` (this core) | GPL-2.0-or-later |
+| `Klax.sv` — MiSTer framework glue layer | GPL-2.0-or-later |
 | `rtl/TG68K/` — TG68K 68000 core, © Tobias Gubener et al. | LGPL-3.0-or-later |
 | `rtl/analog_hsize.sv` — © Umberto Parisi (rmonic79) | GPL-3.0-or-later |
 | `sys/` — MiSTer framework, © Alexey Melnikov and contributors | GPL-2.0-or-later / GPL-3.0-or-later |

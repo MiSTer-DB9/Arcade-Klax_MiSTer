@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (c) 2026 RetroShrimp. GPL v2 or later.
+//
 //============================================================================
 //
 //  Klax — MiSTer FPGA Hardware Recreation
