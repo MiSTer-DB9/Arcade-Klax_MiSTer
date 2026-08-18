@@ -210,15 +210,6 @@ checked against an independent reference rather than against expectation:
 | Playfield prefetch | Multi-frame test with a changing tilemap, counting demand misses in the visible window, with prefetch disabled as a control | 0 misses with prefetch; 62,528 miss-cycles per animated frame in the control |
 | Whole core | Compiled in Quartus 17.0.2 and run on real MiSTer hardware | Validated 2026-07-27 |
 
-The logic in this release is the same logic that was validated on hardware on
-2026-07-27. What has changed since is scaffolding and framework, not behaviour:
-the bring-up probes were removed (they were never instantiated in a release
-build, and the motion-object parity render above is byte-identical before and
-after their removal), and `sys/` was updated to a current framework snapshot. If
-you rebuild, the two things worth re-checking on real hardware are EEPROM
-save/restore across a power cycle and the analog alignment options, neither of
-which a simulation can settle.
-
 Two lessons from that work are worth passing to anyone extending this core:
 
 - **Byte-exact single-frame parity proves nothing about state-carrying bugs.**
