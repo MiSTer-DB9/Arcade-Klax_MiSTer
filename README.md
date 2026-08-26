@@ -120,8 +120,11 @@ the dumped PALs rather than out of an emulator:
 
 - **Address decode from silicon.** The production decoder is the dumped 11C
   GAL16V8; the PAL20L10 that appears in some documentation is the
-  slapstic-variant part, which production Klax does not use. The GAL equations
-  are transcribed verbatim, giving the real behaviour: the whole map mirrors ×4
+  slapstic-variant part, which production Klax does not use. A production board
+  makes that concrete: 11C carries a 20-pin GAL sitting in the 24-pin socket the
+  documentation draws, and both the slapstic socket at 9E and the `/ROM2`
+  program sockets at 3E/1E are physically empty. The GAL equations are
+  transcribed verbatim, giving the real behaviour: the whole map mirrors ×4
   (MA22/MA23 undecoded), selects are page- or window-wide rather than
   byte-exact, `/VRAM` is the full 128 KB window sub-split by MA16, main video
   RAM is one 8K×16 SRAM pair (playfield / SLIP / extended / MOB / work are
@@ -150,7 +153,9 @@ the dumped PALs rather than out of an emulator:
   views together.
 - **JAMMA-accurate HSync.** `/PHSYNC` from the dumped 6W PAL is delayed through
   the LS174 at 17K — only the stage-3 tap is stuffed — for +10 pixels, putting
-  monitor HSync at hc 362..389.
+  monitor HSync at hc 362..389. The tap is not a guess: on a production board
+  the two pads below the LS174 are bare and the five-position tap stack holds a
+  single resistor, in the middle position.
 - **OKI MSM6295 ADPCM** decoding that is bit-exact against a MAME-0.288 golden
   model, plus — unlike MAME, which models none — the PCB's **analog audio output
   filter**: the 5-pole LM324 low-pass on schematic sheet 4, −3 dB at 790 Hz and
@@ -181,8 +186,8 @@ measurement on a real PCB. All are cosmetic or archival:
   it needs a scope capture on the 9Y VSync pin. Nothing on the board reads VSync
   back, and VBLANK/IRQ placement is independently grounded.
 - The 9W VRAM slot machine's phase, to within ±1 pixel.
-- The slapstic PAL20L10 used by the slapstic board variant. Production Klax
-  leaves that socket unstuffed, so it is not implemented.
+- The slapstic PAL20L10 used by the slapstic board variant. Production boards
+  leave that socket empty — verified on hardware — so it is not implemented.
 - The analog video alignment page is simulation-verified and Quartus-clean but
   has not yet been confirmed on hardware. Leaving those options at their
   defaults reproduces the hardware-validated video path bit-for-bit.
