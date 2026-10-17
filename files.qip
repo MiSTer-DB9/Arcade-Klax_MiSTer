@@ -49,8 +49,8 @@ set_global_assignment -name VHDL_FILE rtl/TG68K/TG68K_ALU.vhd
 set_global_assignment -name VHDL_FILE rtl/TG68K/TG68K_Pack.vhd
 set_global_assignment -name VHDL_FILE rtl/TG68K/TG68KdotC_Kernel.vhd
 
-# --- Analog video alignment (OSD scale / H-size / H-V position) -----------
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/analog_hsize.sv
+# --- CRT Adjust (MiSTer-CRT-Adjust c682de9, GPL-3.0-or-later, rmonic79) ----
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/crt_adjust.sv
 set_global_assignment -name VERILOG_FILE rtl/klax_video_adjust.v
 
 # --- MiSTer hardware top ---------------------------------------------------

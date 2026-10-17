@@ -102,14 +102,29 @@ Two authentic behaviours that look like bugs:
 |--------|--------|
 | Aspect ratio | Original / Full Screen / custom |
 | Scale | Integer-scaling mode passed to `video_freak` |
-| CRT H-Size | Analog pixel stretch, ±16 steps of 1/64 pixel period. `0` bypasses the stretch logic entirely |
-| CRT H-Position | Slides stretched content inside the line without moving HSync. Only meaningful when CRT H-Size ≠ 0 |
-| Analog VGA H-Shift / V-Shift | Classic centring nudge — delays HSync/VSync against unchanged content. H-Shift is inert while CRT H-Size ≠ 0, because the read window is referenced to the same shifted HSync; use CRT H-Position there |
+| CRT Adjust | Off / On. Off is a bit-exact bypass; the three amounts below are hidden and do nothing while it is Off (or while the framework forces the scandoubler) |
+| CRT H-Size | Analog pixel stretch, −16..+15 steps of 1/64 pixel period (1.5625%) |
+| CRT H-Position | Slides the content inside the line buffer, −64..+63 pixels, without moving HSync |
+| CRT V-Shift | Delays VSync by −32..+31 lines |
 | Service | Routes the Service input to the board's service line |
 | Autosave | EEPROM write-back to SD (on by default) |
 
-Every alignment control is a true bypass at zero, not merely "set to 0", so a
-default OSD leaves the output bit-identical to the unmodified video path.
+The CRT Adjust page is rmonic79's [MiSTer-CRT-Adjust](https://github.com/rmonic79/MiSTer-CRT-Adjust)
+engine (`rtl/crt_adjust.sv`, upstream `c682de9`) with this core's own glue. With
+it Off — the default — the output is bit-identical to the unmodified video path.
+With it On, the line buffer is live even at all-zero amounts and delivers every
+source line, 0 to 239, full width. Klax's HSync sits late in the line, leaving
+little room to the right of the picture, so the right edge has limited headroom
+(measured in simulation):
+
+| Setting | Lossless up to |
+|---------|----------------|
+| H-Position at H-Size 0 | +24 |
+| H-Size at H-Position 0 | +3 |
+| H-Size at H-Position −48 | +12 |
+| H-Size at H-Position −64 | +15 (the whole range) |
+
+Beyond those, the rightmost pixels are lost. Shrinking never clips.
 
 ---
 
@@ -120,8 +135,11 @@ the dumped PALs rather than out of an emulator:
 
 - **Address decode from silicon.** The production decoder is the dumped 11C
   GAL16V8; the PAL20L10 that appears in some documentation is the
-  slapstic-variant part, which production Klax does not use. The GAL equations
-  are transcribed verbatim, giving the real behaviour: the whole map mirrors ×4
+  slapstic-variant part, which production Klax does not use. A production board
+  makes that concrete: 11C carries a 20-pin GAL sitting in the 24-pin socket the
+  documentation draws, and both the slapstic socket at 9E and the `/ROM2`
+  program sockets at 3E/1E are physically empty. The GAL equations are
+  transcribed verbatim, giving the real behaviour: the whole map mirrors ×4
   (MA22/MA23 undecoded), selects are page- or window-wide rather than
   byte-exact, `/VRAM` is the full 128 KB window sub-split by MA16, main video
   RAM is one 8K×16 SRAM pair (playfield / SLIP / extended / MOB / work are
@@ -150,7 +168,9 @@ the dumped PALs rather than out of an emulator:
   views together.
 - **JAMMA-accurate HSync.** `/PHSYNC` from the dumped 6W PAL is delayed through
   the LS174 at 17K — only the stage-3 tap is stuffed — for +10 pixels, putting
-  monitor HSync at hc 362..389.
+  monitor HSync at hc 362..389. The tap is not a guess: on a production board
+  the two pads below the LS174 are bare and the five-position tap stack holds a
+  single resistor, in the middle position.
 - **OKI MSM6295 ADPCM** decoding that is bit-exact against a MAME-0.288 golden
   model, plus — unlike MAME, which models none — the PCB's **analog audio output
   filter**: the 5-pole LM324 low-pass on schematic sheet 4, −3 dB at 790 Hz and
@@ -181,11 +201,11 @@ measurement on a real PCB. All are cosmetic or archival:
   it needs a scope capture on the 9Y VSync pin. Nothing on the board reads VSync
   back, and VBLANK/IRQ placement is independently grounded.
 - The 9W VRAM slot machine's phase, to within ±1 pixel.
-- The slapstic PAL20L10 used by the slapstic board variant. Production Klax
-  leaves that socket unstuffed, so it is not implemented.
-- The analog video alignment page is simulation-verified and Quartus-clean but
-  has not yet been confirmed on hardware. Leaving those options at their
-  defaults reproduces the hardware-validated video path bit-for-bit.
+- The slapstic PAL20L10 used by the slapstic board variant. Production boards
+  leave that socket empty — verified on hardware — so it is not implemented.
+- The CRT Adjust page is simulation-verified but has not yet been confirmed on
+  hardware. Leaving it Off reproduces the hardware-validated video path
+  bit-for-bit.
 
 ---
 
@@ -208,16 +228,8 @@ checked against an independent reference rather than against expectation:
 | Watchdog | Unit simulation of the 8-frame power-on hold, the self-releasing reset pulse and the pet path | Pass |
 | EEPROM persistence | Two-pass save / reload round trip in simulation | Pass |
 | Playfield prefetch | Multi-frame test with a changing tilemap, counting demand misses in the visible window, with prefetch disabled as a control | 0 misses with prefetch; 62,528 miss-cycles per animated frame in the control |
+| CRT Adjust | Line-identity simulation on the Klax raster: a position-encoded source decoded from the output side through the core's own DE, at Off, On at zero, H-Size −4 and +2, and +4 with H-Position −16; upstream's line-late vblank gate run as a control. A second bench checks Off is bit-exact every clock, the read rate per H-Size step, H-Position both ways with HSync fixed, and V-Shift | 240 / 240 lines, source y 0–239, 336 px, no black inside DE at every setting; the control fails |
 | Whole core | Compiled in Quartus 17.0.2 and run on real MiSTer hardware | Validated 2026-07-27 |
-
-The logic in this release is the same logic that was validated on hardware on
-2026-07-27. What has changed since is scaffolding and framework, not behaviour:
-the bring-up probes were removed (they were never instantiated in a release
-build, and the motion-object parity render above is byte-identical before and
-after their removal), and `sys/` was updated to a current framework snapshot. If
-you rebuild, the two things worth re-checking on real hardware are EEPROM
-save/restore across a power cycle and the analog alignment options, neither of
-which a simulation can settle.
 
 Two lessons from that work are worth passing to anyone extending this core:
 
@@ -234,10 +246,10 @@ Two lessons from that work are worth passing to anyone extending this core:
   took that module from 14,817 ALMs to 233, and the whole design from 97 % to
   59 % utilisation.
 
-Resource use of the shipped build (Cyclone V 5CSEBA6U23I7): 24,916 / 41,910 ALMs
-(59 %), 524 / 553 RAM blocks (95 %), 42 / 112 DSP blocks, 3 / 6 PLLs. Timing
-closes with TNS 0 on every clock: worst setup +0.271 ns, worst hold +0.200 ns,
-and +1.626 ns of setup slack on the core's own 57.27272 MHz domain.
+Resource use of the shipped build (Cyclone V 5CSEBA6U23I7): 25,688 / 41,910 ALMs
+(61 %), 525 / 553 RAM blocks (95 %), 42 / 112 DSP blocks, 3 / 6 PLLs. Timing
+closes with TNS 0 on every clock: worst setup +0.496 ns, worst hold +0.241 ns,
+and +1.606 ns of setup slack on the core's own 57.27272 MHz domain.
 **Block RAM is the binding resource** — budget future work against it, not
 against logic.
 
@@ -299,9 +311,11 @@ GPL-2.0-or-later, but it links components that require v3:
 
 | Component | License |
 |-----------|---------|
-| `rtl/klax_*.v` (this core) | GPL-2.0-or-later |
+| `rtl/klax_*.v` (this core, except the next row) | GPL-2.0-or-later |
+| `rtl/klax_video_adjust.v` — CRT Adjust glue, written from MiSTer-CRT-Adjust's example | GPL-3.0-or-later |
+| `Klax.sv` — MiSTer framework glue layer | GPL-2.0-or-later |
 | `rtl/TG68K/` — TG68K 68000 core, © Tobias Gubener et al. | LGPL-3.0-or-later |
-| `rtl/analog_hsize.sv` — © Umberto Parisi (rmonic79) | GPL-3.0-or-later |
+| `rtl/crt_adjust.sv` — MiSTer-CRT-Adjust `c682de9`, © Umberto Parisi (rmonic79) | GPL-3.0-or-later |
 | `sys/` — MiSTer framework, © Alexey Melnikov and contributors | GPL-2.0-or-later / GPL-3.0-or-later |
 
 ---
@@ -312,8 +326,8 @@ GPL-2.0-or-later, but it links components that require v3:
   ROMs' own internal build stamps read 1990, which is why MAME dates every set
   1990 and the MRAs follow.
 - **Tobias Gubener** and contributors — the TG68K 68000 core.
-- **Umberto Parisi (rmonic79)** — `analog_hsize.sv`, ported from
-  [Arcade-Raiden_MiSTer](https://github.com/rmonic79/Arcade-Raiden_MiSTer).
+- **Umberto Parisi (rmonic79)** — `crt_adjust.sv`, vendored from
+  [MiSTer-CRT-Adjust](https://github.com/rmonic79/MiSTer-CRT-Adjust) at `c682de9`.
 - **Alexey Melnikov (Sorgelig)** and the MiSTer-devel community — the MiSTer
   framework and the arcade infrastructure this core plugs into.
 - **The MAME team** — `klax.cpp` (Aaron Giles), `atarimo.cpp`, `okim6295.cpp`
