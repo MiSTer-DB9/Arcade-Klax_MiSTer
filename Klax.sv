@@ -61,29 +61,39 @@ wire [11:0] ary = (!ar) ? 12'd3 : 12'd0;
 // on-chip M10K bank, which needs block RAM the design no longer has spare.
 localparam KLAX_ENABLE_DDRAM_TILE_ROM = 1'b1;
 
-// The menu is the Video page, service, autosave, controls and reset.
+// The menu is the Video and CRT Adjust pages, service, autosave, controls and
+// reset.
 //
-// Video page (ported from rmonic79's Arcade-Raiden_MiSTer):
-//   Scale              - integer-scaling mode handed to video_freak.
-//   CRT H-Size         - analog pixel stretch, +-16 steps of 1/64 pixel
-//                        period (1.5625%). 0 = native, bypassed entirely.
-//   CRT H-Position     - slides the stretched content inside the line
-//                        without moving HSync (no desync). Only meaningful
-//                        while CRT H-Size != 0.
-//   Analog VGA H/V-Shift - delays HSync / VSync against unchanged content,
-//                        i.e. the classic centring nudge. H-Shift only bites
-//                        while CRT H-Size == 0: with the stretch active the
-//                        read window is referenced to the same shifted HSync,
-//                        so sync and content move together - use CRT
-//                        H-Position there instead.
+// Video page: Aspect ratio, and Scale = the integer-scaling mode handed to
+// video_freak.
+//
+// CRT Adjust page: rmonic79's MiSTer-CRT-Adjust, core-side variant. An
+// On/Off plus three amounts, all plain two's complement (the list is
+// 0,+1..+max then -min..-1 and the decode is a $signed()):
+//   CRT H-Size     - analog pixel stretch, steps of 1/64 pixel period
+//                    (1.5625%).
+//   CRT H-Position - slides the content inside the line buffer without
+//                    moving HSync (no desync).
+//   CRT V-Shift    - delays VSync by N lines.
+// None of these touch the core's timing. Off is a bit-exact bypass, so the
+// analog output and HDMI are untouched unless the user turns it On. H1 hides
+// the three amounts while the stage is inactive, which includes the case
+// where the framework has forced the scandoubler and the stage gates itself
+// off (see `crt_enable`). See rtl/klax_video_adjust.v.
+//
+// Status bits: [13] On, [18:14] H-Size, [25:19] H-Position, [31:26] V-Shift.
+// The previous engine's bits ([61:56] V-Shift, [66:62] H-Size, [97:92]
+// H-Shift, [104:98] H-Position, index-encoded) are retired, not reused, so
+// an old saved config cannot leak into the new controls.
 `define KLAX_VIDEO_MENU \
 	"P1,Video;", \
 	"P1O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];", \
 	"P1O[2:1],Scale,Normal,V-Integer,HV-Integer,Narrower HV-Integer;", \
-	"P1O[66:62],CRT H-Size,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;", \
-	"P1O[104:98],CRT H-Position,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18,+19,+20,+21,+22,+23,+24,+25,+26,+27,+28,+29,+30,+31,+32,+33,+34,+35,+36,+37,+38,+39,+40,+41,+42,+43,+44,+45,+46,+47,+48,-48,-47,-46,-45,-44,-43,-42,-41,-40,-39,-38,-37,-36,-35,-34,-33,-32,-31,-30,-29,-28,-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;", \
-	"P1O[97:92],Analog VGA H-Shift,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18,+19,+20,+21,+22,+23,+24,+25,+26,+27,+28,+29,+30,+31,+32,+33,+34,+35,+36,+37,+38,+39,+40,+41,+42,+43,+44,+45,+46,+47,+48,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;", \
-	"P1O[61:56],Analog VGA V-Shift,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18,+19,+20,+21,+22,+23,+24,+25,+26,+27,+28,+29,+30,+31,-32,-31,-30,-29,-28,-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;"
+	"P2,CRT Adjust;", \
+	"P2O[13],CRT Adjust,Off,On;", \
+	"H1P2O[18:14],CRT H-Size,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;", \
+	"H1P2O[25:19],CRT H-Position,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18,+19,+20,+21,+22,+23,+24,+25,+26,+27,+28,+29,+30,+31,+32,+33,+34,+35,+36,+37,+38,+39,+40,+41,+42,+43,+44,+45,+46,+47,+48,+49,+50,+51,+52,+53,+54,+55,+56,+57,+58,+59,+60,+61,+62,+63,-64,-63,-62,-61,-60,-59,-58,-57,-56,-55,-54,-53,-52,-51,-50,-49,-48,-47,-46,-45,-44,-43,-42,-41,-40,-39,-38,-37,-36,-35,-34,-33,-32,-31,-30,-29,-28,-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;", \
+	"H1P2O[31:26],CRT V-Shift,0,+1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18,+19,+20,+21,+22,+23,+24,+25,+26,+27,+28,+29,+30,+31,-32,-31,-30,-29,-28,-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1;"
 
 localparam CONF_STR = {
 	"Klax;;",
@@ -106,6 +116,12 @@ wire [127:0] status;
 wire  [10:0] ps2_key;
 wire  [31:0] joystick_0;
 wire  [31:0] joystick_1;
+
+// CRT Adjust master enable. Declared here because status_menumask below reads
+// it; what it means is documented at the stage itself (VIDEO OUT section). The
+// forced-scandoubler term is upstream's own integration rule: the read-rate
+// base assumes the native 15 kHz pixel-CE ratio.
+wire crt_enable = status[13] & ~forced_scandoubler;
 
 // ioctl signals for ROM download
 wire        ioctl_download;
@@ -134,7 +150,9 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
 	.status(status),
-	.status_menumask(16'd0),
+	// H1 = "hide while set": hide the three CRT Adjust amounts whenever the
+	// stage is not actually doing anything.
+	.status_menumask({14'd0, ~crt_enable, 1'b0}),
 
 	.ps2_key(ps2_key),
 
@@ -330,10 +348,10 @@ assign CLK_VIDEO = clk_sys;
 assign AUDIO_L = core_audio_l;
 assign AUDIO_R = core_audio_r;
 
-// CRT alignment (H-Shift / V-Shift / H-Size / H-Position). Output-side only:
-// every control is a true bypass at zero, so a default OSD leaves the video
-// bit-identical to the hardware-validated build. See rtl/klax_video_adjust.v
-// for what each control does and where it bites.
+// CRT Adjust (H-Size / H-Position / V-Shift): rmonic79's crt_adjust engine
+// with this core's glue. Output-side only: Off is a true bypass, so a default
+// OSD leaves the video bit-identical to the hardware-validated build. See
+// rtl/klax_video_adjust.v for what each control does and where it bites.
 wire adj_de_in;
 klax_video_adjust u_video_adjust (
 	.clk_sys    (clk_sys),
@@ -347,10 +365,10 @@ klax_video_adjust u_video_adjust (
 	.HBlank     (HBlank),
 	.VBlank     (VBlank),
 
-	.hsize_sel  (status[66:62]),
-	.hpos_sel   (status[104:98]),
-	.hshift_sel (status[97:92]),
-	.vshift_sel (status[61:56]),
+	.osd_on     (crt_enable),
+	.osd_hsize  (status[18:14]),
+	.osd_hpos   (status[25:19]),
+	.osd_vshift (status[31:26]),
 
 	.vga_r      (VGA_R),
 	.vga_g      (VGA_G),
@@ -364,7 +382,7 @@ klax_video_adjust u_video_adjust (
 // Scale (status[2:1]) picks the video_freak integer-scaling mode:
 //   0 Normal, 1 V-Integer, 4 HV-Integer, 2 HV-Integer- (narrower).
 // VGA_VS feeds the UNSHIFTED VSync so the line/frame measurement behind the
-// aspect maths is unaffected by the V-Shift nudge. Cropping is unused.
+// aspect maths is unaffected by CRT V-Shift. Cropping is unused.
 video_freak video_freak
 (
 	.CLK_VIDEO(clk_sys),
