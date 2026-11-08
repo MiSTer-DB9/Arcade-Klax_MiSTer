@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=retry.sh
 source "${SCRIPT_DIR}/retry.sh"
 
-CORE_NAME=(Klax)
+CORE_NAME=(Arcade-Klax)
 MAIN_BRANCH="main"
 TAG_PREFIX="stable/${MAIN_BRANCH}/"
 RETENTION="${RETENTION:-0}"

@@ -19,7 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=retry.sh
 source "${SCRIPT_DIR}/retry.sh"
 
-CORE_NAME=(Klax)
+CORE_NAME=(Arcade-Klax)
 # Consumed by the sourced unstable_lib.sh (UNSTABLE_BRANCH derivation).
 # shellcheck disable=SC2034
 MAIN_BRANCH="main"

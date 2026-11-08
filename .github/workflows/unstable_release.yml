@@ -63,14 +63,14 @@ jobs:
       if: steps.preflight.outputs.skip != 'true'
       id: meta
       run: |
-        first_input=$(echo 'Klax.qpf' | awk '{print $1}')
+        first_input=$(echo 'Arcade-Klax.qpf' | awk '{print $1}')
         if [ "${first_input}" = "make" ]; then
           echo "skip_quartus=true" >> "$GITHUB_OUTPUT"
           echo "::warning::Quartus template landed on a make fork — unstable_release_make.yml should be running instead."
           exit 0
         fi
         echo "skip_quartus=false" >> "$GITHUB_OUTPUT"
-        matrix=$(./.github/emit_matrix.sh 'Klax' 'Klax.qpf' 'output_files/Klax.rbf')
+        matrix=$(./.github/emit_matrix.sh 'Arcade-Klax' 'Arcade-Klax.qpf' 'output_files/Arcade-Klax.rbf')
         echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
         echo "Matrix: ${matrix}"
 

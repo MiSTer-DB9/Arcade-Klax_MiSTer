@@ -10,16 +10,16 @@ source "${SCRIPT_DIR}/retry.sh"
 source "${SCRIPT_DIR}/rerere_train.sh"  # configure_rerere
 
 UPSTREAM_REPO="https://github.com/MiSTer-devel/Arcade-Klax_MiSTer.git"
-CORE_NAME=(Klax)
+CORE_NAME=(Arcade-Klax)
 # Upstream release-file grep pattern (per element of CORE_NAME). Same length as
 # CORE_NAME; for base sections this matches RELEASE_CORE_NAME, for variant-only
 # sections (e.g. NeoGeo_24MHz_cpu_only) it carries the base name that upstream's
 # releases/ actually contains.
-UPSTREAM_CORE_NAME=(Klax)
+UPSTREAM_CORE_NAME=(Arcade-Klax)
 MAIN_BRANCH="main"
 UPSTREAM_BRANCH="main"
-COMPILATION_INPUT=(Klax.qpf)
-COMPILATION_OUTPUT=(output_files/Klax.rbf)
+COMPILATION_INPUT=(Arcade-Klax.qpf)
+COMPILATION_OUTPUT=(output_files/Arcade-Klax.rbf)
 # Directory upstream publishes its built cores into. `releases` is the
 # MiSTer-devel convention; third-party upstreams may publish elsewhere (e.g.
 # misteraddons/SYSTEM11_MiSTer → release/_Arcade/cores).
